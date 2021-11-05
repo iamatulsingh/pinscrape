@@ -1,0 +1,8 @@
+.vscode
+build
+dist
+pinscrape.egg-info
+**/__pycache__/*
+*.pyc
+**/*.pyc
+**/pinscrape/*.pyc

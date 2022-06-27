@@ -100,14 +100,11 @@ class PinterestImageScraper:
     @staticmethod
     def start_scraping(key=None, proxies={}):
         assert key != None, "Please provide keyword for searching images"
-        try:
-            keyword = key + " pinterest"
-            keyword = keyword.replace("+", "%20")
-            url = f'http://www.google.co.in/search?hl=en&q={keyword}'
-            res = get(url, proxies=proxies)
-            searched_urls = PinterestImageScraper.get_pinterest_links(res.content)
-        except Exception as e:
-            return [], ""
+        keyword = key + " pinterest"
+        keyword = keyword.replace("+", "%20")
+        url = f'http://www.google.co.in/search?hl=en&q={keyword}'
+        res = get(url, proxies=proxies)
+        searched_urls = PinterestImageScraper.get_pinterest_links(res.content)
 
         return searched_urls, key.replace(" ", "_")
 

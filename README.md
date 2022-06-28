@@ -6,10 +6,11 @@
 ### How to use?
 ```
 from pinscrape import pinscrape
-is_downloaded = pinscrape.scraper.scrape("messi", "output", {}, 10) 
+details = pinscrape.scraper.scrape("messi", "output", {}, 10)
 
-if is_downloaded:
+if details["isDownloaded"]:
     print("\nDownloading completed !!")
+    print(details)
 else:
     print("\nNothing to download !!")
 ```

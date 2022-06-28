@@ -117,6 +117,12 @@ class PinterestImageScraper:
 
         # get all urls of images and save in a list
         url_list = self.save_image_url()
+        return_data = {
+            "isDownloaded": False,
+            "url_list": url_list,
+            "extracted_urls": extracted_urls,
+            "keyword": key
+        }
 
         # download images from saved images url
         if len(url_list):
@@ -124,18 +130,20 @@ class PinterestImageScraper:
                 out_folder = output_folder if output_folder else key
                 self.download(url_list, keyword, threads, out_folder)
             except KeyboardInterrupt:
-                return False
-            return True
+                return return_data
+            
+            return_data["isDownloaded"] = True
+            return return_data
         
-        return False
+        return return_data
 
 
 scraper = PinterestImageScraper()
 
 if __name__ == "__main__":
-    is_downloaded = scraper.scrape("messi", "output")
+    details = scraper.scrape("messi", "output")
 
-    if is_downloaded:
+    if details["isDownloaded"]:
         print("\nDownloading completed !!")
     else:
         print("\nNothing to download !!")

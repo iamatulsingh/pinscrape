@@ -14,4 +14,8 @@ else:
     print("\nNothing to download !!")
 ```
 
-#### scrape("messi", "output", {}, 10) here `"messi"` is keyword, `"output"` is path to a folder where you want to save images, `{}` is proxy if you want to add and finally `10` is a number of threads you want to use for downloading those images
+`scrape("messi", "output", {}, 10)` <br/>
+- `"messi"` is keyword
+- `"output"` is path to a folder where you want to save images
+- `{}` is proxy if you want to add
+- `10` is a number of threads you want to use for downloading those images

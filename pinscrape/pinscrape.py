@@ -53,11 +53,11 @@ class PinterestImageScraper:
                 data = DotMap(json.loads(js))
                 urls = []
                 for pin in data.props.initialReduxState.pins:
-                    if isinstance(data.props.initialReduxState.pins[pin].images.get("474x"), list):
-                        for i in data.props.initialReduxState.pins[pin].images.get("474x"):
+                    if isinstance(data.props.initialReduxState.pins[pin].images.get("orig"), list):
+                        for i in data.props.initialReduxState.pins[pin].images.get("orig"):
                             urls.append(i.get("url"))
                     else:
-                        urls.append(data.props.initialReduxState.pins[pin].images.get("474x").get("url"))
+                        urls.append(data.props.initialReduxState.pins[pin].images.get("orig").get("url"))
 
                 for url in urls:
                     url_list.append(url)

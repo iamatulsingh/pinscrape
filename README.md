@@ -4,7 +4,7 @@
 ### This package can be use to scrape images from pinterest just by using any search keywords. Install it just by using <br><br>
 `pip install pinscrape`
 ### How to use?
-```
+```python
 from pinscrape import pinscrape
 details = pinscrape.scraper.scrape("messi", "output", {}, 10)
 

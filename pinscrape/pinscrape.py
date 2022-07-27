@@ -88,8 +88,8 @@ class PinterestImageScraper:
             self.unique_img.append(self.dhash(image))
 
     # ------------------------------  download images from image url list ----------------------------
-    def download(self, url_list, keyword, num_of_workers, output_folder):
-        idx = len(url_list) // num_of_workers
+    def download(self, url_list, num_of_workers, output_folder):
+        idx = len(url_list) // num_of_workers if len(url_list) > 9 else len(url_list)
         param = []
         for i in range(num_of_workers):
             param.append((url_list[((i*idx)):(idx*(i+1))], output_folder))
@@ -128,7 +128,7 @@ class PinterestImageScraper:
         if len(url_list):
             try:
                 out_folder = output_folder if output_folder else key
-                self.download(url_list, keyword, threads, out_folder)
+                self.download(url_list, threads, out_folder)
             except KeyboardInterrupt:
                 return return_data
             

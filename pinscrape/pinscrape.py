@@ -19,7 +19,7 @@ class PinterestImageScraper:
 
     # ---------------------------------------- GET GOOGLE RESULTS ---------------------------------
     @staticmethod
-    def get_pinterest_links(body):
+    def get_pinterest_links(body, max_images):
         searched_urls = []
         html = soup(body, 'html.parser')
         links = html.select('#main > div > div > div > a')
@@ -28,6 +28,9 @@ class PinterestImageScraper:
             link = re.sub(r'/url\?q=', '', link)
             if link[0] != "/" and "pinterest" in link:
                 searched_urls.append(link)
+                #stops adding links if the limit has been reached
+                if max_images is not None and max_images == len(searched_urls):
+                    break
 
         return searched_urls
 
@@ -43,7 +46,7 @@ class PinterestImageScraper:
             self.json_data_list.append(a.string)
 
     # --------------------------- READ JSON OF PINTEREST WEBSITE ----------------------
-    def save_image_url(self):
+    def save_image_url(self, max_images):
         url_list = [i for i in self.json_data_list if i.strip()]
         if not len(url_list):
             return url_list
@@ -61,6 +64,12 @@ class PinterestImageScraper:
 
                 for url in urls:
                     url_list.append(url)
+
+                    #if the maximum has been achieved, return early
+                    if max_images is not None and max_images == len(url_list):
+                        return list(set(url_list))
+                    
+
             except Exception as e:
                 continue
         
@@ -98,25 +107,25 @@ class PinterestImageScraper:
 
     # -------------------------- get user keyword and google search for that keywords ---------------------
     @staticmethod
-    def start_scraping(key=None, proxies={}):
+    def start_scraping(max_images, key=None, proxies={}):
         assert key != None, "Please provide keyword for searching images"
         keyword = key + " pinterest"
         keyword = keyword.replace("+", "%20")
         url = f'http://www.google.co.in/search?hl=en&q={keyword}'
         res = get(url, proxies=proxies)
-        searched_urls = PinterestImageScraper.get_pinterest_links(res.content)
+        searched_urls = PinterestImageScraper.get_pinterest_links(res.content,max_images)
 
         return searched_urls, key.replace(" ", "_")
 
 
-    def scrape(self, key=None, output_folder="", proxies={}, threads=10):
-        extracted_urls, keyword = PinterestImageScraper.start_scraping(key, proxies)
+    def scrape(self, key=None, output_folder="", proxies={}, threads=10, max_images: int = None):
+        extracted_urls, keyword = PinterestImageScraper.start_scraping(max_images,key, proxies)
 
         for i in extracted_urls:
             self.get_source(i, proxies)
 
         # get all urls of images and save in a list
-        url_list = self.save_image_url()
+        url_list = self.save_image_url(max_images)
         return_data = {
             "isDownloaded": False,
             "url_list": url_list,

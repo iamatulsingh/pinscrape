@@ -6,3 +6,5 @@ pinscrape.egg-info
 *.pyc
 **/*.pyc
 **/pinscrape/*.pyc
+venv
+output

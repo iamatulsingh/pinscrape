@@ -150,7 +150,7 @@ class PinterestImageScraper:
 scraper = PinterestImageScraper()
 
 if __name__ == "__main__":
-    details = scraper.scrape("messi", "output")
+    details = scraper.scrape("INPUT YOUR SEARCH HERE", "output")
 
     if details["isDownloaded"]:
         print("\nDownloading completed !!")

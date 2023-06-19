@@ -120,12 +120,16 @@ class PinterestImageScraper:
 
     def scrape(self, key=None, output_folder="", proxies={}, threads=10, max_images: int = None):
         extracted_urls, keyword = PinterestImageScraper.start_scraping(max_images,key, proxies)
+        return_data = {}
+        self.unique_img = []
+        self.json_data_list = []
 
         for i in extracted_urls:
             self.get_source(i, proxies)
 
         # get all urls of images and save in a list
         url_list = self.save_image_url(max_images)
+
         return_data = {
             "isDownloaded": False,
             "url_list": url_list,

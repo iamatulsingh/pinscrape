@@ -17,7 +17,7 @@ else:
     print("\nNothing to download !!")
 ```
 
-`scrape("messi", "output", {}, 10)` <br/>
+`scrape("messi", "output", {}, 10, 15)` <br/>
 - `"messi"` is keyword
 - `"output"` is path to a folder where you want to save images
 - `{}` is proxy list if you want to add one (optional)

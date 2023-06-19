@@ -3,3 +3,4 @@ beautifulsoup4==4.11.1
 tqdm==4.64.0
 pydotmap
 opencv-python
+pipenv==2023.6.18

@@ -19,16 +19,7 @@ jobs:
       - name: Install required libraries
         run: |
           pip install -r requirements.txt
-      - id: cache-pipenv
-        uses: actions/cache@v1
-        with:
-          path: ~/.local/share/virtualenvs
-          key: ${{ runner.os }}-pipenv-${{ hashFiles('**/Pipfile.lock') }}
-
-      - name: Install pipenv dependencies
-        if: steps.cache-pipenv.outputs.cache-hit != 'true'
-        run: |
-          pipenv install --deploy --dev
+      
       - name: Run test suite
         run: |
-          pipenv run test tests/e2e.py -v
+          pytest -v tests/e2e.py

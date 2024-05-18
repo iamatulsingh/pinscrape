@@ -12,7 +12,7 @@ setuptools.setup(
     version=__version__,
     author="Atul Singh",
     author_email="atulsingh0401@gmail.com",
-    description="Pinterest data scraper",
+    description="Pinterest | a simple data scraper for pinterest",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/iamatulsingh/pinscrape",

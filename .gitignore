@@ -9,3 +9,4 @@ pinscrape.egg-info
 **/pinscrape/*.pyc
 venv
 output
+.idea

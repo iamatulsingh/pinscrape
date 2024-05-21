@@ -1,7 +1,7 @@
 from pinscrape import scraper
 
 
-details = scraper.scrape("messi", "output", {}, 10, 15)
+details = scraper.scrape("messi", "output", {}, 10, 1)
 
 
 def test_single_data():
@@ -11,6 +11,6 @@ def test_single_data():
         print(f"\nTotal images downloaded (including duplicate images): {len(details['url_list'])}")
         print(details)
     else:
-        print("\nNothing to download !!")
+        print("\nNothing to download !!", details)
 
     assert len(details['extracted_urls']) > 0

@@ -39,6 +39,9 @@ class PinterestImageScraper:
             return
         html = soup(res.text, 'html.parser')
         json_data = html.find_all("script", attrs={"id": "__PWS_INITIAL_PROPS__"})
+        if not len(json_data):
+            json_data = html.find_all("script", attrs={"id": "__PWS_DATA__"})
+
         self.json_data_list.append(json.loads(json_data[0].string)) if len(json_data) else self.json_data_list.append({})
 
     # --------------------------- READ JSON OF PINTEREST WEBSITE ----------------------
@@ -48,14 +51,15 @@ class PinterestImageScraper:
             try:
                 data = DotMap(js)
                 urls = []
-                if not data.initialReduxState:
+                if not data.initialReduxState and not data.props:
                     return []
-                for pin in data.initialReduxState.pins:
-                    if isinstance(data.initialReduxState.pins[pin].images.get("orig"), list):
-                        for i in data.initialReduxState.pins[pin].images.get("orig"):
+                pins = data.initialReduxState.pins if data.initialReduxState else data.props.initialReduxState.pins
+                for pin in pins:
+                    if isinstance(pins[pin].images.get("orig"), list):
+                        for i in pins[pin].images.get("orig"):
                             urls.append(i.get("url"))
                     else:
-                        urls.append(data.initialReduxState.pins[pin].images.get("orig").get("url"))
+                        urls.append(pins[pin].images.get("orig").get("url"))
 
                 for url in urls:
                     url_list.append(url)
@@ -98,18 +102,18 @@ class PinterestImageScraper:
 
     # -------------------------- get user keyword and google search for that keywords ---------------------
     @staticmethod
-    def start_scraping(max_images, key=None, proxies={}):
+    def start_scraping(max_images, key=None, proxies: dict = {}):
         assert key is not None, "Please provide keyword for searching images"
         keyword = key + " pinterest"
         keyword = keyword.replace("+", "%20")
-        url = f'https://www.bing.com/search?q={keyword}&pq=messi+pinterest&first=1&FORM=PERE'
+        url = f'https://www.bing.com/search?q={keyword}&first=1&FORM=PERE'
         res = get(url, proxies=proxies)
         searched_urls = PinterestImageScraper.get_pinterest_links(res.content, max_images)
 
-        return searched_urls, key.replace(" ", "_")
+        return searched_urls, key.replace(" ", "_"), res.status_code
 
     def scrape(self, key: str = None, output_folder: str = "", proxies: dict = {}, threads: int = 10, max_images: int = None) -> dict:
-        extracted_urls, keyword = PinterestImageScraper.start_scraping(max_images, key, proxies)
+        extracted_urls, keyword, search_engine_status_code = PinterestImageScraper.start_scraping(max_images, key, proxies)
         self.unique_img = []
         self.json_data_list = []
 
@@ -121,6 +125,7 @@ class PinterestImageScraper:
 
         return_data = {
             "isDownloaded": False,
+            "search_engine_status_code": search_engine_status_code,
             "url_list": url_list,
             "extracted_urls": extracted_urls,
             "keyword": key

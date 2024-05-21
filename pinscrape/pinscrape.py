@@ -39,7 +39,7 @@ class PinterestImageScraper:
             return
         html = soup(res.text, 'html.parser')
         json_data = html.find_all("script", attrs={"id": "__PWS_INITIAL_PROPS__"})
-        self.json_data_list.append(json.loads(json_data[0].string))
+        self.json_data_list.append(json.loads(json_data[0].string)) if len(json_data) else self.json_data_list.append({})
 
     # --------------------------- READ JSON OF PINTEREST WEBSITE ----------------------
     def save_image_url(self, max_images: int) -> list:
@@ -48,6 +48,8 @@ class PinterestImageScraper:
             try:
                 data = DotMap(js)
                 urls = []
+                if not data.initialReduxState:
+                    return []
                 for pin in data.initialReduxState.pins:
                     if isinstance(data.initialReduxState.pins[pin].images.get("orig"), list):
                         for i in data.initialReduxState.pins[pin].images.get("orig"):

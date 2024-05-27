@@ -107,7 +107,7 @@ class PinterestImageScraper:
         keyword = key + " pinterest"
         keyword = keyword.replace("+", "%20")
         url = f'https://www.bing.com/search?q={keyword}&first=1&FORM=PERE'
-        res = get(url, proxies=proxies)
+        res = get(url, proxies=proxies, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36 Edg/125.0.0.0"})
         searched_urls = PinterestImageScraper.get_pinterest_links(res.content, max_images)
 
         return searched_urls, key.replace(" ", "_"), res.status_code

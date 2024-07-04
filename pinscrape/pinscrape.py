@@ -21,15 +21,17 @@ class PinterestImageScraper:
     def get_pinterest_links(body, max_images: int):
         searched_urls = []
         html = soup(body, 'html.parser')
+        all_urls = []
         links = html.select('#b_results cite')
         for link in links:
             link = link.text
+            all_urls.append(link)
             if "pinterest" in link:
                 searched_urls.append(link)
                 # stops adding links if the limit has been reached
                 if max_images is not None and max_images == len(searched_urls):
                     break
-        return searched_urls
+        return searched_urls, all_urls
 
     # -------------------------- save json data from source code of given pinterest url -------------
     def get_source(self, url: str, proxies: dict) -> None:
@@ -108,12 +110,12 @@ class PinterestImageScraper:
         keyword = keyword.replace("+", "%20")
         url = f'https://www.bing.com/search?q={keyword}&first=1&FORM=PERE'
         res = get(url, proxies=proxies, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36 Edg/125.0.0.0"})
-        searched_urls = PinterestImageScraper.get_pinterest_links(res.content, max_images)
+        searched_urls, links = PinterestImageScraper.get_pinterest_links(res.content, max_images)
 
-        return searched_urls, key.replace(" ", "_"), res.status_code
+        return searched_urls, key.replace(" ", "_"), res.status_code, links
 
     def scrape(self, key: str = None, output_folder: str = "", proxies: dict = {}, threads: int = 10, max_images: int = None) -> dict:
-        extracted_urls, keyword, search_engine_status_code = PinterestImageScraper.start_scraping(max_images, key, proxies)
+        extracted_urls, keyword, search_engine_status_code, links = PinterestImageScraper.start_scraping(max_images, key, proxies)
         self.unique_img = []
         self.json_data_list = []
 
@@ -121,21 +123,22 @@ class PinterestImageScraper:
             self.get_source(i, proxies)
 
         # get all urls of images and save in a list
-        url_list = self.save_image_url(max_images)
+        urls_list = self.save_image_url(max_images)
 
         return_data = {
             "isDownloaded": False,
             "search_engine_status_code": search_engine_status_code,
-            "url_list": url_list,
+            "urls_list": urls_list,
+            "searched_urls": links,
             "extracted_urls": extracted_urls,
             "keyword": key
         }
 
         # download images from saved images url
-        if len(url_list):
+        if len(urls_list):
             try:
                 out_folder = output_folder if output_folder else key
-                self.download(url_list, threads, out_folder)
+                self.download(urls_list, threads, out_folder)
             except KeyboardInterrupt:
                 return return_data
 

@@ -1,4 +1,9 @@
 # pinscrape
+
+<p align="center">
+    <img src="image/banner.png" alt="Logo" width="80%">
+</p>
+
 [![built with Python3](https://img.shields.io/badge/built%20with-Python3.6+-red.svg)](https://www.python.org/)
 
 ### This package can be use to scrape images from pinterest just by using any search keywords. Install it just by using <br><br>

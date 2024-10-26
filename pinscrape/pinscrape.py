@@ -15,36 +15,43 @@ class PinterestImageScraper:
     def __init__(self):
         self.json_data_list = []
         self.unique_img = []
+        self.error_stack = []
 
     # ---------------------------------------- GET GOOGLE RESULTS ---------------------------------
     @staticmethod
-    def get_pinterest_links(body, max_images: int):
+    def get_pinterest_links(body):
         searched_urls = []
         html = soup(body, 'html.parser')
         all_urls = []
         links = html.select('#b_results cite')
         for link in links:
             link = link.text
-            all_urls.append(link)
-            if "pinterest" in link:
-                searched_urls.append(link)
-                # stops adding links if the limit has been reached
-                if max_images is not None and max_images == len(searched_urls):
-                    break
+            all_urls.append(link.replace(' › ', '/'))
+            if "pinterest" in link and not "ideas" in link:
+                searched_urls.append(link.replace(' › ', '/'))
+
         return searched_urls, all_urls
 
     # -------------------------- save json data from source code of given pinterest url -------------
-    def get_source(self, url: str, proxies: dict) -> None:
-        try:
-            res = get(url, proxies=proxies)
-        except Exception:
-            return
-        html = soup(res.text, 'html.parser')
-        json_data = html.find_all("script", attrs={"id": "__PWS_INITIAL_PROPS__"})
-        if not len(json_data):
-            json_data = html.find_all("script", attrs={"id": "__PWS_DATA__"})
+    def get_source(self, urls: list, proxies: dict, max_images: int) -> None:
+        counter = 1
+        for extracted_url in urls:
+            try:
+                res = get(extracted_url, proxies=proxies)
+            except Exception as e:
+                self.error_stack.append(e.args)
+                continue
+            html = soup(res.text, 'html.parser')
+            json_data = html.find_all("script", attrs={"id": "__PWS_INITIAL_PROPS__"})
+            if not len(json_data):
+                json_data = html.find_all("script", attrs={"id": "__PWS_DATA__"})
 
-        self.json_data_list.append(json.loads(json_data[0].string)) if len(json_data) else self.json_data_list.append({})
+            self.json_data_list.append(json.loads(json_data[0].string)) if len(json_data) else self.json_data_list.append({})
+            # stops adding links if the limit has been reached
+            if max_images is not None and max_images == counter:
+                break
+
+            counter += 1
 
     # --------------------------- READ JSON OF PINTEREST WEBSITE ----------------------
     def save_image_url(self, max_images: int) -> list:
@@ -67,7 +74,8 @@ class PinterestImageScraper:
                     url_list.append(url)
                     if max_images is not None and max_images == len(url_list):
                         return list(set(url_list))
-            except Exception:
+            except Exception as e:
+                self.error_stack.append(e.args)
                 continue
 
         return list(set(url_list))
@@ -110,7 +118,7 @@ class PinterestImageScraper:
         keyword = keyword.replace("+", "%20")
         url = f'https://www.bing.com/search?q={keyword}&first=1&FORM=PERE'
         res = get(url, proxies=proxies, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36 Edg/125.0.0.0"})
-        searched_urls, links = PinterestImageScraper.get_pinterest_links(res.content, max_images)
+        searched_urls, links = PinterestImageScraper.get_pinterest_links(res.content)
 
         return searched_urls, key.replace(" ", "_"), res.status_code, links
 
@@ -119,8 +127,8 @@ class PinterestImageScraper:
         self.unique_img = []
         self.json_data_list = []
 
-        for i in extracted_urls:
-            self.get_source(i, proxies)
+        # for i in extracted_urls:
+        self.get_source(extracted_urls, proxies, max_images)
 
         # get all urls of images and save in a list
         urls_list = self.save_image_url(max_images)
@@ -131,7 +139,8 @@ class PinterestImageScraper:
             "urls_list": urls_list,
             "searched_urls": links,
             "extracted_urls": extracted_urls,
-            "keyword": key
+            "keyword": key,
+            "error_stack": self.error_stack,
         }
 
         # download images from saved images url

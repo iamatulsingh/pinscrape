@@ -26,6 +26,5 @@ def test_single_data():
 def test_v2():
     p = Pinterest()
     images_url = p.search(keyword, images_to_download)
-    print(p.errors)
-    assert len(images_url) == images_to_download
+    assert len(images_url) == images_to_download, p.errors
     p.download(url_list=images_url, number_of_workers=number_of_workers, output_folder=output_folder)

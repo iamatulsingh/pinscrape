@@ -204,6 +204,12 @@ class Pinterest:
             logging.warning(f"Image search has failed!, {response.status_code}, {response.text}")
             self.errors.append(f"Image search has failed!, {response.status_code}, {response.text}")
             return []
+
+        msg = f"Response Headers: {response.headers}"
+        msg += f"Response Content-Type: {response.headers.get('Content-Type')}"
+        msg += f"Response: {response.text}"
+        msg += f"Status Code: {response.headers}"
+
         try:
             json_data = response.json()
             results = json_data.get('resource_response', {}).get('data', {}).get('results', [])
@@ -214,6 +220,7 @@ class Pinterest:
             return image_urls
         except requests.exceptions.JSONDecodeError as jde:
             self.errors.append(response.text)
+            self.errors.append(msg)
             return []
 
 

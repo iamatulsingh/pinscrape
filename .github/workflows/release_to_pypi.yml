@@ -25,10 +25,15 @@ jobs:
         with:
           python-version: "3.x"
 
+      - name: Install dependencies
+        run: |
+          python -m ensurepip
+          pip install --upgrade pip
+          pip install --upgrade setuptools wheel twine
+
       - name: Build source and wheel distributions
         run: |
           pip install -r requirements.txt
-          pip install --upgrade setuptools wheel twine
           python setup.py sdist bdist_wheel
           twine check --strict dist/*
 

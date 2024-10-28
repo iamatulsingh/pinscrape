@@ -4,7 +4,7 @@ from pinscrape._version import __version__
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
-with open("requirements-dev.txt", "r") as req:
+with open("requirements.txt", "r") as req:
     reqs = req.read().split("\n")
 
 setuptools.setup(

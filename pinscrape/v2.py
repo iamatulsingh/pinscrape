@@ -213,7 +213,7 @@ class Pinterest:
             logging.info(f"Total {len(image_urls)} image(s) found.")
             return image_urls
         except requests.exceptions.JSONDecodeError as jde:
-            self.errors.append(jde.args)
+            self.errors.append(response.text)
             return []
 
 

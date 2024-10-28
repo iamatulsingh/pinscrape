@@ -1,5 +1,6 @@
 from ._version import __version__ as _version
 from .pinscrape import scraper
+from .v2 import Pinterest
 
 
 __version__ = _version

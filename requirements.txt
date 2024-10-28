@@ -2,5 +2,4 @@ requests~=2.32.2
 beautifulsoup4==4.11.1
 pydotmap~=0.1.3
 opencv-python~=4.9.0.80
-pytest==7.2.0
 numpy~=1.24.2

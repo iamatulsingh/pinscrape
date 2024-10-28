@@ -218,8 +218,7 @@ class Pinterest:
             self.client_context = json_data['client_context']
             logging.info(f"Total {len(image_urls)} image(s) found.")
             return image_urls
-        except requests.exceptions.JSONDecodeError as jde:
-            self.errors.append(response.text)
+        except requests.exceptions.JSONDecodeError:
             self.errors.append(msg)
             return []
 

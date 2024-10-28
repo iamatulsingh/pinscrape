@@ -12,6 +12,7 @@ from os import path, makedirs, getcwd
 
 class Pinterest:
     def __init__(self, user_agent: str = "", proxies: dict = None):
+        self.errors = []
         self.user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.6668.71 Safari/537.36" \
                         if not user_agent else user_agent
         self.BASE_URL = "https://www.pinterest.com"
@@ -201,15 +202,19 @@ class Pinterest:
         image_urls = []
         if response.status_code != 200:
             logging.warning(f"Image search has failed!, {response.status_code}, {response.text}")
+            self.errors.append(f"Image search has failed!, {response.status_code}, {response.text}")
             return []
-
-        json_data = response.json()
-        results = json_data.get('resource_response', {}).get('data', {}).get('results', [])
-        for result in results:
-            image_urls.append(result['images']['orig']['url'])
-        self.client_context = json_data['client_context']
-        logging.info(f"Total {len(image_urls)} image(s) found.")
-        return image_urls
+        try:
+            json_data = response.json()
+            results = json_data.get('resource_response', {}).get('data', {}).get('results', [])
+            for result in results:
+                image_urls.append(result['images']['orig']['url'])
+            self.client_context = json_data['client_context']
+            logging.info(f"Total {len(image_urls)} image(s) found.")
+            return image_urls
+        except requests.exceptions.JSONDecodeError as jde:
+            self.errors.append(jde.args)
+            return []
 
 
 if __name__ == "__main__":

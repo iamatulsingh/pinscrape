@@ -25,4 +25,4 @@ jobs:
       
       - name: Run test suite
         run: |
-          pytest -v e2e.py
+          pytest -sv e2e.py

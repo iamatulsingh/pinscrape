@@ -1,5 +1,8 @@
 from pinscrape import scraper, Pinterest
+import logging
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger()
 
 keyword = "messi"
 output_folder = "output"
@@ -23,5 +26,6 @@ def test_single_data():
 def test_v2():
     p = Pinterest()
     images_url = p.search(keyword, images_to_download)
-    p.download(url_list=images_url, number_of_workers=number_of_workers, output_folder=output_folder)
+    print(p.errors)
     assert len(images_url) == images_to_download
+    p.download(url_list=images_url, number_of_workers=number_of_workers, output_folder=output_folder)

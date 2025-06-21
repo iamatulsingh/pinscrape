@@ -13,25 +13,29 @@ from os import path, makedirs, getcwd
 class Pinterest:
     def __init__(self, user_agent: str = "", proxies: dict = None):
         self.errors = []
-        self.user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.6668.71 Safari/537.36" \
+        self.user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36" \
                         if not user_agent else user_agent
-        self.BASE_URL = "https://www.pinterest.com"
+        self.BASE_URL = "https://in.pinterest.com"
         self.BASE_HEADERS = {
-            'Host': 'www.pinterest.com',
-            'Sec-Ch-Ua': '"Chromium";v="129", "Not=A?Brand";v="8"',
-            'Sec-Ch-Ua-Mobile': '?0',
+            'Host': self.BASE_URL.replace('https://', ''),
             'Sec-Ch-Ua-Platform': '"Windows"',
-            'Accept-Language': 'en-GB,en;q=0.9',
-            'Upgrade-Insecure-Requests': '1',
+            'Sec-Ch-Ua': '"Chromium";v="137", "Not/A)Brand";v="24"',
+            'Sec-Ch-Ua-Model': '""',
+            'Sec-Ch-Ua-Mobile': '?0',
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json, text/javascript, */*, q=0.01',
+            'X-Pinterest-Source-Url': '',
+            'X-Pinterest-Appstate': 'active',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Screen-Dpr': '1',
+            'X-Pinterest-Pws-Handler': 'www/search/[scope].js',
             'User-Agent': self.user_agent,
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-            'Sec-Fetch-Site': 'none',
-            'Sec-Fetch-Mode': 'navigate',
-            'Sec-Fetch-User': '?1',
-            'Sec-Fetch-Dest': 'document',
-            'Accept-Encoding': 'gzip, deflate, br',
-            'Priority': 'u=0, i',
-            'Connection': 'keep-alive',
+            'Sec-Ch-Ua-Platform-Version': '""',
+            'Sec-Fetch-Site': 'same-origin',
+            'Sec-Fetch-Mode': 'cors',
+            'Sec-Fetch-Dest': 'empty',
+            'Referer': f'{self.BASE_URL}/',
+            'Priority': 'u=1, i',
         }
         self.data_dir = "data"
         self.client_context = {}
@@ -55,6 +59,7 @@ class Pinterest:
                 self.update_time_epoch()
             else:
                 logging.info(f"Using saved time epoch")
+        self.session = requests.Session()
 
     def update_time_epoch(self) -> None:
         """
@@ -118,7 +123,7 @@ class Pinterest:
         url_list, folder_name = var
         makedirs(path.join(getcwd(), folder_name), exist_ok=True)
         for img in url_list:
-            result = requests.request("GET", img, stream=True, proxies=self.proxies).content
+            result = self.session.get(img, stream=True, proxies=self.proxies).content
             file_name = img.split("/")[-1]
             file_path = path.join(getcwd(), folder_name, file_name)
             img_arr = np.asarray(bytearray(result), dtype="uint8")
@@ -179,13 +184,14 @@ class Pinterest:
         :return: list of image urls
         """
         source_url = f"/search/pins/?q={quote(query)}&rs=typed"
+        _ = self.session.get(f"{self.BASE_URL}{source_url}")
         data = quote_plus(json.dumps({"options":
                     {"applied_unified_filters": None, "appliedProductFilters": "---" , "article": None,
                      "auto_correction_disabled": False, "corpus": None, "customized_rerank_type": None,
                      "domains":None, "filters": None, "journey_depth": None, "page_size": f"{page_size}", "price_max": None,
                      "price_min": None, "query_pin_sigs": None,"query": quote(query), "redux_normalize_feed": True,
                      "request_params": None, "rs": "typed", "scope": "pins", "selected_one_bar_modules": None,
-                     "source_id": None, "source_module_id": None,
+                     "source_id": None, "source_module_id": None, "seoDrawerEnabled": False,
                      "source_url": quote_plus(source_url), "top_pin_id": None, "top_pin_ids": None},
                 "context":{}}).replace(" ", ""))
 
@@ -197,8 +203,8 @@ class Pinterest:
                f"&data={data}&_={ts}")
         payload = {}
         headers = self.BASE_HEADERS
-        headers['Cookies'] = self.cookies
-        response = requests.request("GET", url, headers=headers, data=payload, proxies=self.proxies)
+        headers['X-Pinterest-Source-Url'] = source_url
+        response = self.session.get(url, headers=headers, data=payload, proxies=self.proxies)
         image_urls = []
         if response.status_code != 200:
             logging.warning(f"Image search has failed!, {response.status_code}, {response.text}")

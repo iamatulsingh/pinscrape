@@ -40,13 +40,7 @@ class Pinterest:
         self.data_dir = "data"
         self.client_context = {}
         self.unique_images = []
-        self.cookies = self.read_file("cookies.json").get("cookies", "")
         self.proxies = proxies if proxies else {}
-
-        if not self.cookies:
-            self.cookies = self.fetch_cookies()
-        else:
-            logging.debug("Using saved cookies")
 
         self.time_epoch = self.read_file("time_epoch.json").get('time_epoch', '')
         if not self.time_epoch:

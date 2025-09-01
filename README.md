@@ -21,7 +21,7 @@ number_of_workers = 10
 images_to_download = 1
 
 def using_search_engine():
-    details = scraper.scrape(keyword, output_folder, proxies, number_of_workers, images_to_download)
+    details = scraper.scrape(keyword, output_folder, proxies, number_of_workers, images_to_download, sleep_time=2)
     if details["isDownloaded"]:
         print("\nDownloading completed !!")
         print(f"\nTotal urls found: {len(details['extracted_urls'])}")
@@ -32,7 +32,11 @@ def using_search_engine():
 
 
 def using_pinterest_apis():
-    p = Pinterest(proxies=proxies) # you can also pass `user_agent` here.
+    p = Pinterest(proxies=proxies, sleep_time=2) # you can also pass `user_agent` here.
     images_url = p.search(keyword, images_to_download)
     p.download(url_list=images_url, number_of_workers=number_of_workers, output_folder=output_folder)
+    board_details = p.get_pin_details(username='canva', board='design-trends')
+    # you can now check any board details of a user.
+    print(board_details)
+    print(board_details.get('resource_response', {}).get('data', {}).get('created_at'))
 ```

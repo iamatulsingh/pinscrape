@@ -2,6 +2,7 @@ import json
 import os
 import cv2
 import numpy as np
+import time
 
 from requests import get
 from bs4 import BeautifulSoup as soup
@@ -16,6 +17,7 @@ class PinterestImageScraper:
         self.json_data_list = []
         self.unique_img = []
         self.error_stack = []
+        self.sleep_time = None
 
     # ---------------------------------------- GET GOOGLE RESULTS ---------------------------------
     @staticmethod
@@ -46,12 +48,15 @@ class PinterestImageScraper:
             if not len(json_data):
                 json_data = html.find_all("script", attrs={"id": "__PWS_DATA__"})
 
-            self.json_data_list.append(json.loads(json_data[0].string)) if len(json_data) else self.json_data_list.append({})
+            self.json_data_list.append(json.loads(json_data[0].string)) if len(
+                json_data) else self.json_data_list.append({})
             # stops adding links if the limit has been reached
             if max_images is not None and max_images == counter:
                 break
-
             counter += 1
+
+            if self.sleep_time:
+                time.sleep(self.sleep_time)
 
     # --------------------------- READ JSON OF PINTEREST WEBSITE ----------------------
     def save_image_url(self, max_images: int) -> list:
@@ -90,7 +95,7 @@ class PinterestImageScraper:
     def saving_op(self, var):
         url_list, folder_name = var
         if not os.path.exists(os.path.join(os.getcwd(), folder_name)):
-                os.mkdir(os.path.join(os.getcwd(), folder_name))
+            os.mkdir(os.path.join(os.getcwd(), folder_name))
         for img in url_list:
             result = get(img, stream=True).content
             file_name = img.split("/")[-1]
@@ -106,31 +111,33 @@ class PinterestImageScraper:
         idx = len(url_list) // num_of_workers if len(url_list) > 9 else len(url_list)
         param = []
         for i in range(num_of_workers):
-            param.append((url_list[((i*idx)):(idx*(i+1))], output_folder))
+            param.append((url_list[((i * idx)):(idx * (i + 1))], output_folder))
         with ThreadPoolExecutor(max_workers=num_of_workers) as executor:
             executor.map(self.saving_op, param)
 
     # -------------------------- get user keyword and google search for that keywords ---------------------
     @staticmethod
-    def start_scraping(max_images, key=None, proxies: dict = {}):
+    def start_scraping(key=None, proxies: dict = {}):
         assert key is not None, "Please provide keyword for searching images"
-        keyword = key + " pinterest"
+        keyword = key + "+pinterest"
         keyword = keyword.replace("+", "%20")
         url = f'https://www.bing.com/search?q={keyword}&first=1&FORM=PERE'
-        res = get(url, proxies=proxies, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36 Edg/125.0.0.0"})
+        res = get(url, proxies=proxies, headers={
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36 Edg/139.0.0.0"})
         searched_urls, links = PinterestImageScraper.get_pinterest_links(res.content)
 
         return searched_urls, key.replace(" ", "_"), res.status_code, links
 
-    def scrape(self, key: str = None, output_folder: str = "", proxies: dict = {}, threads: int = 10, max_images: int = None) -> dict:
-        extracted_urls, keyword, search_engine_status_code, links = PinterestImageScraper.start_scraping(max_images, key, proxies)
+    def scrape(self, key: str = None, output_folder: str = "", proxies: dict = {}, threads: int = 10,
+               max_images: int = None, sleep_time: float = None) -> dict:
+        self.sleep_time = sleep_time
+
+        extracted_urls, keyword, search_engine_status_code, links = PinterestImageScraper.start_scraping(key, proxies)
         self.unique_img = []
         self.json_data_list = []
 
-        # for i in extracted_urls:
         self.get_source(extracted_urls, proxies, max_images)
 
-        # get all urls of images and save in a list
         urls_list = self.save_image_url(max_images)
 
         return_data = {
@@ -143,7 +150,6 @@ class PinterestImageScraper:
             "error_stack": self.error_stack,
         }
 
-        # download images from saved images url
         if len(urls_list):
             try:
                 out_folder = output_folder if output_folder else key
@@ -159,9 +165,8 @@ class PinterestImageScraper:
 
 scraper = PinterestImageScraper()
 
-
 if __name__ == "__main__":
-    details = scraper.scrape("messi", "output", {}, 10, None)
+    details = scraper.scrape("messi", "output", {}, 10, 5, sleep_time=2)
 
     if details["isDownloaded"]:
         print("\nDownloading completed !!")

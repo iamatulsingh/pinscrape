@@ -23,6 +23,7 @@ def test_single_data():
 
     assert len(details['extracted_urls']) > 0
 
+
 def test_v2():
     p = Pinterest()
     images_url = p.search(keyword, images_to_download)

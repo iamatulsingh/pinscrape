@@ -245,10 +245,7 @@ class Pinterest:
                 .get("results", [])
             )
             for result in results:
-                # Check if result has images key and if it's a pin (not a story/container)
-                if "images" in result and result.get("type") == "pin":
-                    if "orig" in result["images"]:
-                        image_urls.append(result["images"]["orig"]["url"])
+                image_urls.append(result["images"]["orig"]["url"])
             self.client_context = json_data["client_context"]
             logging.info(f"Total {len(image_urls)} image(s) found.")
             return image_urls

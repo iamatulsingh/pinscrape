@@ -3,6 +3,7 @@ import os
 import cv2
 import numpy as np
 import time
+import warnings
 
 from requests import get
 from bs4 import BeautifulSoup as soup
@@ -14,6 +15,10 @@ from pydotmap import DotMap
 class PinterestImageScraper:
 
     def __init__(self):
+        warnings.warn(
+            "PinterestImageScraper is deprecated and will be removed in a future version. " +
+            "Use Pinterest instead (defined in v2). For more details, check the README file.",
+            category=DeprecationWarning, stacklevel=2)
         self.json_data_list = []
         self.unique_img = []
         self.error_stack = []

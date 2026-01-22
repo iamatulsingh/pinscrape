@@ -20,7 +20,7 @@ proxies = {}
 number_of_workers = 10
 images_to_download = 1
 
-def using_search_engine():
+def using_search_engine(): # This is deprecated now
     details = scraper.scrape(keyword, output_folder, proxies, number_of_workers, images_to_download, sleep_time=2)
     if details["isDownloaded"]:
         print("\nDownloading completed !!")

@@ -13,9 +13,10 @@ from .utils import image_hash, ensure_dir, current_epoch_ms
 
 
 class Pinterest:
-    BASE_URL = "https://in.pinterest.com"
+    BASE_URL = None
 
-    def __init__(self, user_agent: str = "", proxies: dict = None, sleep_time: float = None):
+    def __init__(self, base_url: str = "https://in.pinterest.com",user_agent: str = "", proxies: dict = None, sleep_time: float = None):
+        self.BASE_URL = base_url
         self.errors = []
         self.sleep_time = sleep_time
         self.proxies = proxies or {}

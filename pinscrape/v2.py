@@ -53,6 +53,7 @@ class Pinterest:
 
         self.time_epoch = self._load_epoch()
         self.session = requests.Session()
+        self.session.proxies.update(proxies or {})
 
     # -----------------------------
     # Epoch persistence
@@ -133,7 +134,7 @@ class Pinterest:
         headers = self.BASE_HEADERS.copy()
         headers["X-Pinterest-Source-Url"] = source_url
 
-        response = self.session.get(url, headers=headers, proxies=self.proxies)
+        response = self.session.get(url, headers=headers)
 
         if self.sleep_time:
             time.sleep(self.sleep_time)
@@ -185,7 +186,7 @@ class Pinterest:
                 "Accept": "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
             }
 
-            response = self.session.get(url, headers=headers, proxies=self.proxies)
+            response = self.session.get(url, headers=headers)
             if response.status_code != 200:
                 logging.warning(f"Failed to download image: {url} ({response.status_code})")
                 return

@@ -80,11 +80,11 @@ class Pinterest:
     # Pinterest API calls
     # -----------------------------
 
-    def search(self, query: str, page_size=26):
+    def search(self, query: str, page_size=26, timeout=None):
         source_url = f"/search/pins/?q={quote(query)}&rs=typed"
 
         # Warm-up request (critical)
-        self.session.get(f"{self.BASE_URL}{source_url}", headers=self.BASE_HEADERS)
+        self.session.get(f"{self.BASE_URL}{source_url}", headers=self.BASE_HEADERS, timeout=timeout)
 
         payload = {
             "options": {
@@ -135,7 +135,7 @@ class Pinterest:
         headers = self.BASE_HEADERS.copy()
         headers["X-Pinterest-Source-Url"] = source_url
 
-        response = self.session.get(url, headers=headers)
+        response = self.session.get(url, headers=headers, timeout=timeout)
 
         if self.sleep_time:
             time.sleep(self.sleep_time)
@@ -148,7 +148,7 @@ class Pinterest:
         results = data.resource_response.data.results
         return [r.images["orig"].url for r in results]
 
-    def get_pin_details(self, username: str, board: str):
+    def get_pin_details(self, username: str, board: str, timeout=None):
         headers = self.BASE_HEADERS.copy()
         headers['x-pinterest-appstate'] = 'active'
         headers['x-pinterest-pws-handler'] = 'www/[username]/[slug].js'
@@ -165,7 +165,8 @@ class Pinterest:
             f'{self.BASE_URL}/resource/UserResource/get/',
             params=params,
             headers=headers,
-            proxies=self.proxies
+            proxies=self.proxies,
+            timeout=timeout
         )
 
         if response.status_code != 200:
@@ -178,7 +179,7 @@ class Pinterest:
     # Image downloading
     # -----------------------------
 
-    def _save_image(self, url: str, folder: Path):
+    def _save_image(self, url: str, folder: Path, timeout=None):
         try:
             # Pinterest requires headers for image downloads
             headers = {
@@ -187,7 +188,7 @@ class Pinterest:
                 "Accept": "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
             }
 
-            response = self.session.get(url, headers=headers)
+            response = self.session.get(url, headers=headers, timeout=timeout)
             if response.status_code != 200:
                 logging.warning(f"Failed to download image: {url} ({response.status_code})")
                 return

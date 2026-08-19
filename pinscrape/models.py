@@ -7,7 +7,7 @@ class PinImage(BaseModel):
 
 
 class PinResult(BaseModel):
-    images: Dict[str, PinImage]
+    images: Optional[Dict[str, PinImage]] = None
 
 
 class SearchData(BaseModel):

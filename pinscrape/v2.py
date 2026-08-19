@@ -152,7 +152,19 @@ class Pinterest:
 
         data = SearchResponse(**response.json())
         results = data.resource_response.data.results
-        return [r.images["orig"].url for r in results]
+        image_urls = []
+
+        for result in results:
+            if not result.images:
+                continue
+
+            orig = result.images.get("orig")
+            if not orig:
+                continue
+
+            image_urls.append(str(orig.url))
+
+        return image_urls
 
     def get_pin_details(self, username: str, board: str):
         headers = self.BASE_HEADERS.copy()

@@ -9,7 +9,15 @@ from urllib.parse import quote, quote_plus
 from concurrent.futures import ThreadPoolExecutor
 
 from .models import SearchResponse, BoardResponse
-from .utils import image_hash, ensure_dir, current_epoch_ms
+from .utils import (
+    image_hash,
+    ensure_dir,
+    current_epoch_ms,
+    is_allowed_image_url,
+    safe_image_path,
+    REQUEST_TIMEOUT,
+    MAX_IMAGE_BYTES,
+)
 
 
 class Pinterest:
@@ -82,7 +90,7 @@ class Pinterest:
         source_url = f"/search/pins/?q={quote(query)}&rs=typed"
 
         # Warm-up request (critical)
-        self.session.get(f"{self.BASE_URL}{source_url}", headers=self.BASE_HEADERS)
+        self.session.get(f"{self.BASE_URL}{source_url}", headers=self.BASE_HEADERS, timeout=REQUEST_TIMEOUT)
 
         payload = {
             "options": {
@@ -133,7 +141,7 @@ class Pinterest:
         headers = self.BASE_HEADERS.copy()
         headers["X-Pinterest-Source-Url"] = source_url
 
-        response = self.session.get(url, headers=headers, proxies=self.proxies)
+        response = self.session.get(url, headers=headers, proxies=self.proxies, timeout=REQUEST_TIMEOUT)
 
         if self.sleep_time:
             time.sleep(self.sleep_time)
@@ -163,7 +171,8 @@ class Pinterest:
             f'{self.BASE_URL}/resource/UserResource/get/',
             params=params,
             headers=headers,
-            proxies=self.proxies
+            proxies=self.proxies,
+            timeout=REQUEST_TIMEOUT
         )
 
         if response.status_code != 200:
@@ -178,6 +187,17 @@ class Pinterest:
 
     def _save_image(self, url: str, folder: Path):
         try:
+            # SSRF guard: only fetch https URLs from trusted Pinterest CDN hosts.
+            if not is_allowed_image_url(url):
+                logging.warning(f"Refusing to download untrusted image URL: {url}")
+                return
+
+            # Path-traversal guard: derive a safe basename inside the target folder.
+            filename = safe_image_path(url, folder)
+            if filename is None:
+                logging.warning(f"Refusing unsafe image filename for URL: {url}")
+                return
+
             # Pinterest requires headers for image downloads
             headers = {
                 "User-Agent": self.user_agent,
@@ -185,12 +205,20 @@ class Pinterest:
                 "Accept": "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
             }
 
-            response = self.session.get(url, headers=headers, proxies=self.proxies)
+            response = self.session.get(
+                url, headers=headers, proxies=self.proxies, timeout=REQUEST_TIMEOUT, stream=True
+            )
             if response.status_code != 200:
                 logging.warning(f"Failed to download image: {url} ({response.status_code})")
                 return
 
-            img_arr = np.frombuffer(response.content, dtype=np.uint8)
+            # Decompression-bomb guard: cap the number of bytes we read.
+            content = response.raw.read(MAX_IMAGE_BYTES + 1, decode_content=True)
+            if len(content) > MAX_IMAGE_BYTES:
+                logging.warning(f"Image exceeds size cap, skipping: {url}")
+                return
+
+            img_arr = np.frombuffer(content, dtype=np.uint8)
             image = cv2.imdecode(img_arr, cv2.IMREAD_COLOR)
 
             if image is None:
@@ -201,8 +229,6 @@ class Pinterest:
             if h in self.unique_images:
                 return
 
-            url_str = str(url)
-            filename = folder / url_str.split("/")[-1]
             cv2.imwrite(str(filename), image)
             self.unique_images.append(h)
 

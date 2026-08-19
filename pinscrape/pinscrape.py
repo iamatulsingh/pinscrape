@@ -11,6 +11,13 @@ from concurrent.futures import ThreadPoolExecutor
 
 from pydotmap import DotMap
 
+from .utils import (
+    is_allowed_image_url,
+    safe_image_path,
+    REQUEST_TIMEOUT,
+    MAX_IMAGE_BYTES,
+)
+
 
 class PinterestImageScraper:
 
@@ -44,7 +51,7 @@ class PinterestImageScraper:
         counter = 1
         for extracted_url in urls:
             try:
-                res = get(extracted_url, proxies=proxies)
+                res = get(extracted_url, proxies=proxies, timeout=REQUEST_TIMEOUT)
             except Exception as e:
                 self.error_stack.append(e.args)
                 continue
@@ -99,17 +106,43 @@ class PinterestImageScraper:
     # ------------------------------  save all downloaded images to folder ---------------------------
     def saving_op(self, var):
         url_list, folder_name = var
-        if not os.path.exists(os.path.join(os.getcwd(), folder_name)):
-            os.mkdir(os.path.join(os.getcwd(), folder_name))
+        folder_path = os.path.join(os.getcwd(), folder_name)
+        if not os.path.exists(folder_path):
+            os.makedirs(folder_path, exist_ok=True)
         for img in url_list:
-            result = get(img, stream=True).content
-            file_name = img.split("/")[-1]
-            file_path = os.path.join(os.getcwd(), folder_name, file_name)
+            # SSRF guard: only fetch https URLs from trusted Pinterest CDN hosts.
+            if not is_allowed_image_url(img):
+                self.error_stack.append(("untrusted image URL", img))
+                continue
+
+            # Path-traversal guard: derive a safe path inside the target folder.
+            safe_path = safe_image_path(img, folder_path)
+            if safe_path is None:
+                self.error_stack.append(("unsafe image filename", img))
+                continue
+            file_path = str(safe_path)
+
+            try:
+                resp = get(img, stream=True, timeout=REQUEST_TIMEOUT)
+                # Decompression-bomb guard: cap bytes read.
+                result = resp.raw.read(MAX_IMAGE_BYTES + 1, decode_content=True)
+            except Exception as e:
+                self.error_stack.append(e.args)
+                continue
+            if len(result) > MAX_IMAGE_BYTES:
+                self.error_stack.append(("image exceeds size cap", img))
+                continue
+
             img_arr = np.asarray(bytearray(result), dtype="uint8")
             image = cv2.imdecode(img_arr, cv2.IMREAD_COLOR)
-            if not self.dhash(image) in self.unique_img:
+            # Null-check: cv2.imdecode returns None on undecodable data.
+            if image is None:
+                self.error_stack.append(("cv2 failed to decode image", img))
+                continue
+            h = self.dhash(image)
+            if h not in self.unique_img:
                 cv2.imwrite(file_path, image)
-            self.unique_img.append(self.dhash(image))
+            self.unique_img.append(h)
 
     # ------------------------------  download images from image url list ----------------------------
     def download(self, url_list, num_of_workers, output_folder):
@@ -127,7 +160,7 @@ class PinterestImageScraper:
         keyword = key + "+pinterest"
         keyword = keyword.replace("+", "%20")
         url = f'https://www.bing.com/search?q={keyword}&first=1&FORM=PERE'
-        res = get(url, proxies=proxies, headers={
+        res = get(url, proxies=proxies, timeout=REQUEST_TIMEOUT, headers={
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36 Edg/139.0.0.0"})
         searched_urls, links = PinterestImageScraper.get_pinterest_links(res.content)
 
